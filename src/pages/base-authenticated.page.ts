@@ -1,9 +1,11 @@
 import { expect, Page } from '@playwright/test';
+import { waitForSecurityVerificationToClear } from '../utils/security-challenge';
 
 export abstract class BaseAuthenticatedPage {
   protected constructor(protected readonly page: Page) {}
 
   async expectAuthenticated(): Promise<void> {
+    await waitForSecurityVerificationToClear(this.page);
     await expect(this.page.getByRole('heading', { name: 'Account Services' })).toBeVisible();
   }
 
@@ -19,4 +21,3 @@ export abstract class BaseAuthenticatedPage {
     await this.page.getByRole('link', { name: 'Log Out' }).click();
   }
 }
-

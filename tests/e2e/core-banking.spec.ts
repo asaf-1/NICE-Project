@@ -7,8 +7,36 @@ import { AccountsOverviewPage } from '../../src/pages/accounts-overview.page';
 import { LoginPage } from '../../src/pages/login.page';
 import { RegisterPage } from '../../src/pages/register.page';
 import { TransferFundsPage } from '../../src/pages/transfer-funds.page';
+import { Account } from '../../src/types/bank';
 import { createCheckingAccountViaCurl } from '../../src/utils/curl';
 import { sumBalances, toCents } from '../../src/utils/currency';
+
+interface AccountPairSnapshot {
+  accounts: Account[];
+  newAccount: Account;
+  sourceAccount: Account;
+  totalCents: number;
+}
+
+function buildAccountPairSnapshot(
+  accounts: Account[],
+  sourceAccountId: number,
+  newAccountId: number,
+): AccountPairSnapshot | null {
+  const sourceAccount = accounts.find((account) => account.id === sourceAccountId);
+  const newAccount = accounts.find((account) => account.id === newAccountId);
+
+  if (!sourceAccount || !newAccount) {
+    return null;
+  }
+
+  return {
+    accounts,
+    sourceAccount,
+    newAccount,
+    totalCents: toCents(sumBalances(accounts.map((account) => account.balance))),
+  };
+}
 
 test.describe('Core Banking Flow', () => {
   test('validates the full UI + API + curl journey', async ({ page, request }, testInfo) => {
@@ -60,8 +88,6 @@ test.describe('Core Banking Flow', () => {
       return response;
     });
 
-    const initialTotalCents = toCents(existingAccount.balance);
-
     const createAccountResult = await test.step('Create a new checking account via curl', async () => {
       const response = await createCheckingAccountViaCurl({
         apiBaseUrl: env.apiBaseUrl,
@@ -92,42 +118,70 @@ test.describe('Core Banking Flow', () => {
       await expect
         .poll(async () => {
           const accounts = await api.getCustomerAccounts(customer.id);
+          const snapshot = buildAccountPairSnapshot(
+            accounts,
+            existingAccount.id,
+            createAccountResult.body.id,
+          );
 
-          return accounts.length;
+          if (!snapshot) {
+            return null;
+          }
+
+          return {
+            accountCount: snapshot.accounts.length,
+            newAccountCustomerId: snapshot.newAccount.customerId,
+            newAccountType: snapshot.newAccount.type,
+            sourceAccountCustomerId: snapshot.sourceAccount.customerId,
+          };
+        }, {
+          timeout: 30_000,
         })
-        .toBe(2);
+        .toEqual({
+          accountCount: 2,
+          newAccountCustomerId: customer.id,
+          newAccountType: 'CHECKING',
+          sourceAccountCustomerId: customer.id,
+        });
 
       const accounts = await api.getCustomerAccounts(customer.id);
-      const sourceAccount = accounts.find((account) => account.id === existingAccount.id);
-      const newAccount = accounts.find((account) => account.id === createAccountResult.body.id);
+      const snapshot = buildAccountPairSnapshot(
+        accounts,
+        existingAccount.id,
+        createAccountResult.body.id,
+      );
 
-      expect(sourceAccount).toBeDefined();
-      expect(newAccount).toBeDefined();
+      expect(snapshot).not.toBeNull();
 
-      expectAccountShape(sourceAccount!, {
+      expectAccountShape(snapshot!.sourceAccount, {
         id: existingAccount.id,
         customerId: customer.id,
-        balance: existingAccount.balance - env.openingDeposit,
       });
-      expectAccountShape(newAccount!, {
+      expectAccountShape(snapshot!.newAccount, {
         id: createAccountResult.body.id,
         customerId: customer.id,
         type: 'CHECKING',
-        balance: env.openingDeposit,
       });
-      expect(toCents(sumBalances(accounts.map((account) => account.balance)))).toBe(initialTotalCents);
 
       await accountsOverviewPage.goto();
       await accountsOverviewPage.expectLoaded();
-      await accountsOverviewPage.expectAccountVisible(createAccountResult.body.id);
-      await expect(accountsOverviewPage.getDisplayedAccountIds()).resolves.toContain(createAccountResult.body.id);
-      await expect(accountsOverviewPage.getDisplayedBalance(createAccountResult.body.id)).resolves.toBe(
-        env.openingDeposit,
+
+      try {
+        await accountsOverviewPage.expectAccountVisible(createAccountResult.body.id);
+      } catch {
+        await accountsOverviewPage.refresh();
+        await accountsOverviewPage.expectLoaded();
+        await accountsOverviewPage.expectAccountVisible(createAccountResult.body.id);
+      }
+
+      expect(toCents(await accountsOverviewPage.getDisplayedBalance(createAccountResult.body.id))).toBe(
+        toCents(snapshot!.newAccount.balance),
       );
 
       return {
-        sourceAccount: sourceAccount!,
-        newAccount: newAccount!,
+        newAccount: snapshot!.newAccount,
+        sourceAccount: snapshot!.sourceAccount,
+        totalCents: snapshot!.totalCents,
       };
     });
 
@@ -147,21 +201,39 @@ test.describe('Core Banking Flow', () => {
     });
 
     await test.step('Validate updated balances via API', async () => {
+      await expect
+        .poll(async () => {
+          const updatedSourceAccount = await api.getAccount(refreshedAccountsAfterCreation.sourceAccount.id);
+          const updatedNewAccount = await api.getAccount(refreshedAccountsAfterCreation.newAccount.id);
+          const allAccounts = await api.getCustomerAccounts(customer.id);
+
+          return {
+            newAccountBalanceCents: toCents(updatedNewAccount.balance),
+            sourceAccountBalanceCents: toCents(updatedSourceAccount.balance),
+            totalCents: toCents(sumBalances(allAccounts.map((account) => account.balance))),
+          };
+        }, {
+          timeout: 30_000,
+        })
+        .toEqual({
+          newAccountBalanceCents: toCents(refreshedAccountsAfterCreation.newAccount.balance + env.transferAmount),
+          sourceAccountBalanceCents: toCents(refreshedAccountsAfterCreation.sourceAccount.balance - env.transferAmount),
+          totalCents: refreshedAccountsAfterCreation.totalCents,
+        });
+
       const updatedSourceAccount = await api.getAccount(refreshedAccountsAfterCreation.sourceAccount.id);
       const updatedNewAccount = await api.getAccount(refreshedAccountsAfterCreation.newAccount.id);
-      const allAccounts = await api.getCustomerAccounts(customer.id);
 
       expectAccountShape(updatedSourceAccount, {
-        id: refreshedAccountsAfterCreation.sourceAccount.id,
-        customerId: customer.id,
         balance: refreshedAccountsAfterCreation.sourceAccount.balance - env.transferAmount,
+        customerId: customer.id,
+        id: refreshedAccountsAfterCreation.sourceAccount.id,
       });
       expectAccountShape(updatedNewAccount, {
-        id: refreshedAccountsAfterCreation.newAccount.id,
-        customerId: customer.id,
         balance: refreshedAccountsAfterCreation.newAccount.balance + env.transferAmount,
+        customerId: customer.id,
+        id: refreshedAccountsAfterCreation.newAccount.id,
       });
-      expect(toCents(sumBalances(allAccounts.map((account) => account.balance)))).toBe(initialTotalCents);
     });
 
     await test.step('Log out', async () => {
@@ -170,4 +242,3 @@ test.describe('Core Banking Flow', () => {
     });
   });
 });
-

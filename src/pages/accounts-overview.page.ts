@@ -1,6 +1,7 @@
 import { expect, Locator, Page } from '@playwright/test';
 import { BaseAuthenticatedPage } from './base-authenticated.page';
 import { parseCurrency } from '../utils/currency';
+import { waitForSecurityVerificationToClear } from '../utils/security-challenge';
 
 export class AccountsOverviewPage extends BaseAuthenticatedPage {
   constructor(page: Page) {
@@ -9,6 +10,7 @@ export class AccountsOverviewPage extends BaseAuthenticatedPage {
 
   async goto(): Promise<void> {
     await this.page.goto('overview.htm');
+    await waitForSecurityVerificationToClear(this.page);
   }
 
   async expectLoaded(): Promise<void> {
@@ -18,6 +20,7 @@ export class AccountsOverviewPage extends BaseAuthenticatedPage {
 
   async refresh(): Promise<void> {
     await this.page.reload();
+    await waitForSecurityVerificationToClear(this.page);
   }
 
   async expectAccountVisible(accountId: number): Promise<void> {

@@ -2,6 +2,7 @@ import { expect, Page } from '@playwright/test';
 import { BaseAuthenticatedPage } from './base-authenticated.page';
 import { TransferDetails } from '../types/bank';
 import { formatCurrency } from '../utils/currency';
+import { waitForSecurityVerificationToClear } from '../utils/security-challenge';
 
 export class TransferFundsPage extends BaseAuthenticatedPage {
   constructor(page: Page) {
@@ -10,6 +11,7 @@ export class TransferFundsPage extends BaseAuthenticatedPage {
 
   async goto(): Promise<void> {
     await this.page.goto('transfer.htm');
+    await waitForSecurityVerificationToClear(this.page);
   }
 
   async expectLoaded(): Promise<void> {
@@ -22,6 +24,7 @@ export class TransferFundsPage extends BaseAuthenticatedPage {
     await this.page.locator('#fromAccountId').selectOption(String(details.fromAccountId));
     await this.page.locator('#toAccountId').selectOption(String(details.toAccountId));
     await this.page.getByRole('button', { name: 'Transfer' }).click();
+    await waitForSecurityVerificationToClear(this.page);
   }
 
   async expectTransferComplete(details: TransferDetails): Promise<void> {
@@ -33,4 +36,3 @@ export class TransferFundsPage extends BaseAuthenticatedPage {
     ).toBeVisible();
   }
 }
-

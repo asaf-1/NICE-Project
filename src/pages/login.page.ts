@@ -1,16 +1,19 @@
 import { expect, Page } from '@playwright/test';
+import { waitForSecurityVerificationToClear } from '../utils/security-challenge';
 
 export class LoginPage {
   constructor(private readonly page: Page) {}
 
   async goto(): Promise<void> {
     await this.page.goto('index.htm');
+    await waitForSecurityVerificationToClear(this.page);
   }
 
   async login(username: string, password: string): Promise<void> {
     await this.page.locator('input[name="username"]').fill(username);
     await this.page.locator('input[name="password"]').fill(password);
     await this.page.getByRole('button', { name: 'Log In' }).click();
+    await waitForSecurityVerificationToClear(this.page);
   }
 
   async openRegister(): Promise<void> {
@@ -18,6 +21,7 @@ export class LoginPage {
   }
 
   async expectInvalidLogin(message: string): Promise<void> {
+    await waitForSecurityVerificationToClear(this.page);
     await expect(this.page).toHaveURL(/login\.htm/);
     await expect(this.page.getByRole('heading', { name: 'Customer Login' })).toBeVisible();
     await expect(this.page.getByRole('heading', { name: 'Error!' })).toBeVisible();
