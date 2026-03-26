@@ -1,0 +1,22 @@
+{
+  "name": "nice-project",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Production-ready Playwright automation framework for the ParaBank home assignment.",
+  "scripts": {
+    "test": "playwright test",
+    "test:headed": "playwright test --headed",
+    "test:core": "playwright test tests/e2e/core-banking.spec.ts",
+    "test:negative": "playwright test tests/negative",
+    "typecheck": "tsc --noEmit",
+    "report": "playwright show-report",
+    "ci": "npm run typecheck && playwright test"
+  },
+  "devDependencies": {
+    "@playwright/test": "^1.54.0",
+    "@types/node": "^24.0.0",
+    "dotenv": "^17.2.1",
+    "typescript": "^5.8.3"
+  }
+}
+

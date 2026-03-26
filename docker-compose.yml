@@ -1,0 +1,11 @@
+services:
+  playwright:
+    build:
+      context: .
+    environment:
+      HEADLESS: "true"
+    volumes:
+      - ./playwright-report:/app/playwright-report
+      - ./reports:/app/reports
+      - ./test-results:/app/test-results
+    command: npm test
