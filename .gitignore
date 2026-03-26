@@ -3,4 +3,6 @@ playwright-report/
 test-results/
 reports/
 .env
+artifacts/
+PERSONAL_INTERVIEW_NOTES.md
 
