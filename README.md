@@ -176,6 +176,12 @@ Run type-checking:
 npm.cmd run typecheck
 ```
 
+Run the suite in Playwright UI mode with trace always on:
+
+```powershell
+npx.cmd playwright test --ui --trace on
+```
+
 Open the HTML report after execution:
 
 ```powershell
