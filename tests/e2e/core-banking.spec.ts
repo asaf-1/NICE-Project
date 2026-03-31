@@ -38,8 +38,8 @@ function buildAccountPairSnapshot(
   };
 }
 
-test.describe('Core Banking Flow', () => {
-  test('validates the full UI + API + curl journey', async ({ page, request }, testInfo) => {
+test.describe('@e2e @regression Core Banking Flow', () => {
+  test('@smoke validates the full UI + API + curl journey', async ({ page, request }, testInfo) => {
     const user = createRegistrationUser();
     const api = new BankApiClient(request, env.apiBaseUrl);
     const loginPage = new LoginPage(page);

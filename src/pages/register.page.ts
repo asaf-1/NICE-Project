@@ -73,4 +73,10 @@ export class RegisterPage {
       })
       .toBe(true);
   }
+
+  async expectDuplicateUsernameError(message: string): Promise<void> {
+    await waitForSecurityVerificationToClear(this.page);
+    await expect(this.page).toHaveURL(/register\.htm/);
+    await expect(this.page.getByText(message, { exact: true })).toBeVisible();
+  }
 }

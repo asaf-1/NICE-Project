@@ -23,6 +23,17 @@ export interface Account {
   balance: number;
 }
 
+export type TransactionType = 'Credit' | 'Debit';
+
+export interface Transaction {
+  id: number;
+  accountId: number;
+  type: TransactionType;
+  date: string;
+  amount: number;
+  description: string;
+}
+
 export interface RegistrationUser {
   firstName: string;
   lastName: string;
@@ -45,4 +56,3 @@ export interface CurlJsonResponse<T> {
   rawBody: string;
   statusCode: number;
 }
-

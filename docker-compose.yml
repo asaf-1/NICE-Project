@@ -1,11 +1,19 @@
+x-playwright-base: &playwright-base
+  build:
+    context: .
+  environment:
+    HEADLESS: "true"
+  volumes:
+    - ./playwright-report:/app/playwright-report
+    - ./reports:/app/reports
+    - ./test-results:/app/test-results
+
 services:
   playwright:
-    build:
-      context: .
-    environment:
-      HEADLESS: "true"
-    volumes:
-      - ./playwright-report:/app/playwright-report
-      - ./reports:/app/reports
-      - ./test-results:/app/test-results
+    <<: *playwright-base
     command: npm test
+
+  playwright-parallel:
+    <<: *playwright-base
+    profiles: ["parallel"]
+    command: npm run test:parallel

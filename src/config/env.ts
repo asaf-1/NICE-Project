@@ -47,6 +47,6 @@ export const env = {
   expectTimeout: getNumberEnv('EXPECT_TIMEOUT', 15_000),
   transferAmount: getNumberEnv('TRANSFER_AMOUNT', 25),
   openingDeposit: getNumberEnv('OPENING_DEPOSIT', 100),
+  parallelWorkers: getNumberEnv('PARALLEL_WORKERS', 2),
   headless: getBooleanEnv('HEADLESS', true),
 };
-

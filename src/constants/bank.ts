@@ -7,5 +7,5 @@ export const ACCOUNT_TYPE_CODES = {
 export const PARABANK_MESSAGES = {
   invalidLogin: 'The username and password could not be verified.',
   passwordMismatch: 'Passwords did not match.',
+  duplicateUsername: 'This username already exists.',
 } as const;
-

@@ -8,6 +8,12 @@
     "test:headed": "playwright test --headed",
     "test:core": "playwright test tests/e2e/core-banking.spec.ts",
     "test:negative": "playwright test tests/negative",
+    "test:smoke": "playwright test --grep @smoke",
+    "test:api": "playwright test --grep @api",
+    "test:contract": "playwright test --grep @contract",
+    "test:regression": "playwright test --grep @regression",
+    "test:parallel": "playwright test --config=playwright.parallel.config.ts --grep @parallel",
+    "test:cross-browser": "playwright test --config=playwright.matrix.config.ts --grep @smoke",
     "typecheck": "tsc --noEmit",
     "report": "playwright show-report",
     "ci": "npm run typecheck && playwright test"
@@ -19,4 +25,3 @@
     "typescript": "^5.8.3"
   }
 }
-

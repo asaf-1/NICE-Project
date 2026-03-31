@@ -1,12 +1,13 @@
-FROM node:20-bookworm
+FROM mcr.microsoft.com/playwright:v1.54.0-jammy
 
 WORKDIR /app
 
 COPY package*.json ./
 RUN npm ci
-RUN npx playwright install --with-deps chromium
 
 COPY . .
 
-CMD ["npm", "test"]
+ENV HEADLESS=true
+ENV CI=true
 
+CMD ["npm", "test"]

@@ -3,8 +3,10 @@ import { PARABANK_MESSAGES } from '../../src/constants/bank';
 import { createRegistrationUser } from '../../src/data/user.factory';
 import { LoginPage } from '../../src/pages/login.page';
 import { RegisterPage } from '../../src/pages/register.page';
+import { waitForSecurityVerificationToClear } from '../../src/utils/security-challenge';
+import { expect } from '@playwright/test';
 
-test.describe('Negative Authentication Scenarios', () => {
+test.describe('@negative @auth Negative Authentication Scenarios', () => {
   test('shows an error for invalid login credentials', async ({ page }) => {
     const loginPage = new LoginPage(page);
 
@@ -21,5 +23,11 @@ test.describe('Negative Authentication Scenarios', () => {
     await registerPage.register(user, 'DifferentPassw0rd!');
     await registerPage.expectPasswordMismatchError(PARABANK_MESSAGES.passwordMismatch);
   });
-});
 
+  test('keeps unauthenticated users on the login experience when they open a protected page directly', async ({ page }) => {
+    await page.goto('overview.htm');
+    await waitForSecurityVerificationToClear(page);
+
+    await expect(page.getByRole('heading', { name: 'Customer Login' })).toBeVisible();
+  });
+});
