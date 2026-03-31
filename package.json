@@ -19,7 +19,7 @@
     "ci": "npm run typecheck && playwright test"
   },
   "devDependencies": {
-    "@playwright/test": "^1.54.0",
+    "@playwright/test": "1.58.2",
     "@types/node": "^24.0.0",
     "dotenv": "^17.2.1",
     "typescript": "^5.8.3"
